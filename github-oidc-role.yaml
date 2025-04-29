@@ -4,7 +4,7 @@ Description: IAM Role for GitHub Actions OIDC Integration (reutiliza recursos ex
 Parameters:
   GitHubRepo:
     Type: String
-    Default: lbribiesca-hls/springboot-app
+    Default: pablomc20/springboot-app
     Description: GitHub repo in the form user/repo
 
 Resources:
@@ -17,12 +17,12 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Federated: arn:aws:iam::045997866959:oidc-provider/token.actions.githubusercontent.com
+              Federated: arn:aws:iam::873153257366:oidc-provider/token.actions.githubusercontent.com
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: "sts.amazonaws.com"
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:ref:refs/heads/dev"
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:ref:refs/heads/main"
       Policies:
         - PolicyName: GitHubDeployPolicy
           PolicyDocument:
@@ -46,4 +46,4 @@ Resources:
                 Resource: "*"
               - Effect: Allow
                 Action: iam:PassRole
-                Resource: arn:aws:iam::045997866959:role/springboot-ecs-alb-TaskExecutionRole-*
+                Resource: arn:aws:iam::873153257366:role/springboot-ecs-alb-TaskExecutionRole-*
