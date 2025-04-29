@@ -7,6 +7,6 @@ import org.springframework.stereotype.Service;
 public class HelloService {
 
     public HelloResponse sayHello() {
-        return new HelloResponse("¡Hola desde Spring Boot y Docker!");
+        return new HelloResponse("¡Hola desde Spring Boot, Docker y GitHub Actions!");
     }
 }
