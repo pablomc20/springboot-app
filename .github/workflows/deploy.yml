@@ -1,0 +1,77 @@
+name: Build and Deploy Spring Boot App to ECS
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: springboot-app
+  ECS_CLUSTER: springboot-cluster
+  ECS_SERVICE: springboot-ecs-alb-ECSService-pxajwufgmBdd
+  TASK_FAMILY: springboot-ecs-alb-TaskDefinition-qzTiUqUFbDMs
+  CONTAINER_NAME: springboot-container
+
+jobs:
+  deploy:
+    name: Build and Deploy to ECS with Task Definition Update
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::045997866959:role/GitHubActionsOIDC
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY:latest .
+
+      - name: Tag image
+        run: |
+          docker tag $ECR_REPOSITORY:latest ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
+
+      - name: Push image to ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
+
+      - name: Get current task definition
+        id: get-task-def
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition $TASK_FAMILY \
+            --query "taskDefinition" > task-def.json
+
+      - name: Create new task definition revision with updated image
+        id: register-task-def
+        run: |
+          export IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:latest"
+          jq \
+            '. | .containerDefinitions[0].image = env.IMAGE_URI
+             | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredBy, .registeredAt)' \
+            task-def.json > new-task-def.json
+
+          aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json > task-def-out.json
+
+      - name: Update ECS service with new task definition
+        run: |
+          NEW_REVISION=$(jq -r '.taskDefinition.taskDefinitionArn' task-def-out.json)
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --task-definition $NEW_REVISION \
+            --region $AWS_REGION
