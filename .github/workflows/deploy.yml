@@ -13,8 +13,8 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: springboot-app
   ECS_CLUSTER: springboot-cluster
-  ECS_SERVICE: springboot-ecs-alb-ECSService-pxajwufgmBdd
-  TASK_FAMILY: springboot-ecs-alb-TaskDefinition-qzTiUqUFbDMs
+  ECS_SERVICE: springboot-ecs-alb-ECSService-g39ZtIT0EPua
+  TASK_FAMILY: springboot-ecs-alb-TaskDefinition-FWgGUm2ifl9m
   CONTAINER_NAME: springboot-container
 
 jobs:
